@@ -4,7 +4,7 @@ Ranks NFL and College Football teams using Poisson regression in MATLAB.
 
 The regression estimated is:
 
-$$\log{\mathbb{E}\mathrm{PointsScored}_{t,i}} = \alpha + \beta \mathrm{AtHomeDummy}_{t,i} + \omicron \mathrm{OvertimeDummy}_{t} + \sum_{j=1}^J{\gamma_j TeamOffenseDummy_{t,i,j}} - \sum_{j=1}^J{\delta_j TeamDefenseDummy_{t,i,j}}$$
+$$ \log{\mathbb{E}\mathrm{PointsScored}_{t,i}} = \alpha + \beta \mathrm{AtHomeDummy}_{t,i} + \omicron \mathrm{OvertimeDummy}_{t} + \sum_{j=1}^J{\gamma_j TeamOffenseDummy_{t,i,j}} - \sum_{j=1}^J{\delta_j TeamDefenseDummy_{t,i,j}} $$
 
 where $t$ indexes games, $i\in\{1,2\}$ indexes the teams playing that game, and where there are $J$ teams in total.
 
