@@ -1,0 +1,3 @@
+[submodule "YALMIP"]
+	path = YALMIP
+	url = https://github.com/yalmip/YALMIP.git
