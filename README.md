@@ -10,3 +10,7 @@ where $t$ indexes games, $i\in\{1,2\}$ indexes the teams playing that game, and 
 
 Uses YALMIP & Mosek to estimate the regression to guaranteed global optimality.
 
+# License
+
+The code is licensed under the GPLv3 license included. This does not apply to the data file "College.csv" which is copyright CollegeFootballData.com.
+
