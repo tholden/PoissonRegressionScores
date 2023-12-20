@@ -31,7 +31,7 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
     Offense = sdpvar( NTeams, 1 );
     Defense = sdpvar( NTeams, 1 );
 
-    LogPrediction = Mean + HomeOffset * Home + OvertimeOffset * Overtime + OffenseIndicators * Offense - DefenseIndicators * Defense;
+    LogPrediction = Mean + Home * HomeOffset + Overtime * OvertimeOffset + OffenseIndicators * Offense - DefenseIndicators * Defense;
 
     LogLikelihood = sum( Scores .* LogPrediction - exp( LogPrediction ) );
 
