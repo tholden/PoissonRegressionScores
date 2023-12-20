@@ -70,14 +70,14 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
 
     assert( SolverOutput.problem == 0 );
 
-    MaxOffenseVariance = value( mean( diff( Offense ) .^ 2 ) );
-    MaxDefenseVariance = value( mean( diff( Defense ) .^ 2 ) );
+    MaxOffenseVariance = value( mean( mean( diff( Offense ) .^ 2 ) ) );
+    MaxDefenseVariance = value( mean( mean( diff( Defense ) .^ 2 ) ) );
 
     Offense = sdpvar( NWeeks, NTeams, 'full' );
     Defense = sdpvar( NWeeks, NTeams, 'full' );
 
-    OffenseVariance = mean( diff( Offense ) .^ 2 );
-    DefenseVariance = mean( diff( Defense ) .^ 2 );
+    OffenseVariance = mean( mean( diff( Offense ) .^ 2 ) );
+    DefenseVariance = mean( mean( diff( Defense ) .^ 2 ) );
 
     LogPrediction = Mean + Home * HomeOffset + Overtime * OvertimeOffset + Offense( sub2ind( [ NWeeks, NTeams ], Weeks, OffenseIDs ) ) - Defense( sub2ind( [ NWeeks, NTeams ], Weeks, DefenseIDs ) );
 
