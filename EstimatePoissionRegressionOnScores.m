@@ -50,44 +50,52 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
     HomeOffset = sdpvar( 1, 1 );
     OvertimeOffset = sdpvar( 1, 1 );
 
-    OffenseIntercept = sdpvar( 1, NTeams );
-    DefenseIntercept = sdpvar( 1, NTeams );
-    OffenseSlope = sdpvar( 1, NTeams );
-    DefenseSlope = sdpvar( 1, NTeams );
-
-    Offense = bsxfun( @plus, OffenseIntercept, ( 1 : NWeeks ).' * OffenseSlope );
-    Defense = bsxfun( @plus, DefenseIntercept, ( 1 : NWeeks ).' * DefenseSlope );
-
-    LogPrediction = Mean + Home * HomeOffset + Overtime * OvertimeOffset + Offense( sub2ind( [ NWeeks, NTeams ], Weeks, OffenseIDs ) ) - Defense( sub2ind( [ NWeeks, NTeams ], Weeks, DefenseIDs ) );
-
-    LogLikelihoods = Scores .* LogPrediction - exp( LogPrediction );
-
-    LogLikelihood = sum( LogLikelihoods );
-
-    Conditions = [ sum( OffenseIntercept ) == 0, sum( DefenseIntercept ) == 0, sum( OffenseSlope ) == 0, sum( DefenseSlope ) == 0 ];
-
-    SolverOutput = optimize( Conditions, -LogLikelihood, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
-
-    assert( SolverOutput.problem == 0 );
-
-    MaxOffenseVariance = value( mean( mean( diff( Offense ) .^ 2 ) ) );
-    MaxDefenseVariance = value( mean( mean( diff( Defense ) .^ 2 ) ) );
+    % OffenseIntercept = sdpvar( 1, NTeams );
+    % DefenseIntercept = sdpvar( 1, NTeams );
+    % OffenseSlope = sdpvar( 1, NTeams );
+    % DefenseSlope = sdpvar( 1, NTeams );
+    % 
+    % Offense = bsxfun( @plus, OffenseIntercept, ( 1 : NWeeks ).' * OffenseSlope );
+    % Defense = bsxfun( @plus, DefenseIntercept, ( 1 : NWeeks ).' * DefenseSlope );
+    % 
+    % LogPrediction = Mean + Home * HomeOffset + Overtime * OvertimeOffset + Offense( sub2ind( [ NWeeks, NTeams ], Weeks, OffenseIDs ) ) - Defense( sub2ind( [ NWeeks, NTeams ], Weeks, DefenseIDs ) );
+    % 
+    % LogLikelihoods = Scores .* LogPrediction - exp( LogPrediction );
+    % 
+    % LogLikelihood = sum( LogLikelihoods );
+    % 
+    % Conditions = [ sum( OffenseIntercept ) == 0, sum( DefenseIntercept ) == 0, sum( OffenseSlope ) == 0, sum( DefenseSlope ) == 0 ];
+    % 
+    % SolverOutput = optimize( Conditions, -LogLikelihood, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
+    % 
+    % assert( SolverOutput.problem == 0 );
+    % 
+    % ReferenceDSS = value( sum( sum( diff( Offense ) .^ 2 ) ) + sum( sum( diff( Defense ) .^ 2 ) ) );
 
     Offense = sdpvar( NWeeks, NTeams, 'full' );
     Defense = sdpvar( NWeeks, NTeams, 'full' );
 
-    OffenseVariance = mean( mean( diff( Offense ) .^ 2 ) );
-    DefenseVariance = mean( mean( diff( Defense ) .^ 2 ) );
+    DSS = sum( sum( diff( Offense ) .^ 2 ) ) + sum( sum( diff( Defense ) .^ 2 ) );
 
     LogPrediction = Mean + Home * HomeOffset + Overtime * OvertimeOffset + Offense( sub2ind( [ NWeeks, NTeams ], Weeks, OffenseIDs ) ) - Defense( sub2ind( [ NWeeks, NTeams ], Weeks, DefenseIDs ) );
+
+    Conditions = [ sum( Offense(:) ) == 0, sum( Defense(:) ) == 0, LogPrediction == log( max( 1, Scores ) ) ];
+
+    SolverOutput = optimize( Conditions, DSS, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
+
+    assert( SolverOutput.problem == 0 );
+
+    MaxDSS = value( DSS );
 
     LogLikelihoods = Scores .* LogPrediction - exp( LogPrediction );
 
     LogLikelihood = sum( LogLikelihoods );
 
-    Conditions = [ sum( Offense(:) ) == 0, sum( Defense(:) ) == 0, OffenseVariance <= MaxOffenseVariance, DefenseVariance <= MaxDefenseVariance ];
+    BIC = log( NObservations ) * 2 * NTeams * ( NWeeks - 1 ) * ( DSS / MaxDSS ) - 2 * LogLikelihood;
 
-    SolverOutput = optimize( Conditions, -LogLikelihood, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
+    Conditions = [ sum( Offense(:) ) == 0, sum( Defense(:) ) == 0 ]; % , DSS <= ReferenceDSS
+
+    SolverOutput = optimize( Conditions, BIC, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
 
     assert( SolverOutput.problem == 0 );
 
