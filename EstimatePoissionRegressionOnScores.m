@@ -66,7 +66,7 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
     % 
     % Conditions = [ sum( OffenseIntercept ) == 0, sum( DefenseIntercept ) == 0, sum( OffenseSlope ) == 0, sum( DefenseSlope ) == 0 ];
     % 
-    % SolverOutput = optimize( Conditions, -LogLikelihood, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
+    % SolverOutput = optimize( Conditions, -LogLikelihood, sdpsettings( 'verbose', 0, 'showprogress', 0, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
     % 
     % assert( SolverOutput.problem == 0 );
     % 
@@ -79,13 +79,30 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
 
     LogPrediction = Mean + Home * HomeOffset + Overtime * OvertimeOffset + Offense( sub2ind( [ NWeeks, NTeams ], Weeks, OffenseIDs ) ) - Defense( sub2ind( [ NWeeks, NTeams ], Weeks, DefenseIDs ) );
 
-    Conditions = [ sum( Offense(:) ) == 0, sum( Defense(:) ) == 0, LogPrediction == log( max( 1, Scores ) ) ];
+    Conditions = [ sum( Offense(:) ) == 0, sum( Defense(:) ) == 0, LogPrediction <= log( max( 1, Scores + 0.5 ) ), LogPrediction >= log( max( 0, Scores - 0.5 ) ) ];
 
-    SolverOutput = optimize( Conditions, DSS, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
+    SolverOutput = optimize( Conditions, DSS, sdpsettings( 'verbose', 0, 'showprogress', 0, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
+
+    assert( SolverOutput.problem == 0 );
+
+    MaxLogLikelihoods = Scores .* value( LogPrediction ) - exp( value( LogPrediction ) );
+
+    MaxLogLikelihood = sum( MaxLogLikelihoods );
+
+    LogLikelihoods = Scores .* LogPrediction - exp( LogPrediction );
+
+    LogLikelihood = sum( LogLikelihoods );
+
+    Conditions = [ sum( Offense(:) ) == 0, sum( Defense(:) ) == 0, LogLikelihood >= MaxLogLikelihood ];
+
+    SolverOutput = optimize( Conditions, DSS, sdpsettings( 'verbose', 0, 'showprogress', 0, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
 
     assert( SolverOutput.problem == 0 );
 
     MaxDSS = value( DSS );
+
+    disp( 'Maximum possible DSS:' );
+    disp( MaxDSS );
 
     LogLikelihoods = Scores .* LogPrediction - exp( LogPrediction );
 
@@ -95,7 +112,7 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
 
     Conditions = [ sum( Offense(:) ) == 0, sum( Defense(:) ) == 0 ]; % , DSS <= ReferenceDSS
 
-    SolverOutput = optimize( Conditions, BIC, sdpsettings( 'verbose', 1, 'showprogress', 1, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
+    SolverOutput = optimize( Conditions, BIC, sdpsettings( 'verbose', 0, 'showprogress', 0, 'warning', 1, 'cachesolvers', 1, 'solver', 'mosek' ) );
 
     assert( SolverOutput.problem == 0 );
 
@@ -104,6 +121,9 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
     OvertimeOffset = value( OvertimeOffset );
     Offense = value( Offense( end, : ).' );
     Defense = value( Defense( end, : ).' );
+
+    disp( 'Final DSS:' );
+    disp( value( DSS ) );
 
 end
 
