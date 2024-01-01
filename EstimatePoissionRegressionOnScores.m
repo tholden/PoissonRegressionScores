@@ -75,7 +75,7 @@ function [ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = Estimat
     Offense = sdpvar( NWeeks, NTeams, 'full' );
     Defense = sdpvar( NWeeks, NTeams, 'full' );
 
-    DSS = sum( sum( diff( Offense ) .^ 2 ) ) + sum( sum( diff( Defense ) .^ 2 ) );
+    DSS = sum( sum( bsxfun( @minus, Offense, mean( Offense ) ) .^ 2 ) ) + sum( sum( bsxfun( @minus, Defense, mean( Defense ) ) .^ 2 ) ) + sum( sum( diff( Offense ) .^ 2 ) ) + sum( sum( diff( Defense ) .^ 2 ) ) + sum( sum( diff( diff( Offense ) ) .^ 2 ) ) + sum( sum( diff( diff( Defense ) ) .^ 2 ) );
 
     LogPrediction = Mean + Home * HomeOffset + Overtime * OvertimeOffset + Offense( sub2ind( [ NWeeks, NTeams ], Weeks, OffenseIDs ) ) - Defense( sub2ind( [ NWeeks, NTeams ], Weeks, DefenseIDs ) );
 
