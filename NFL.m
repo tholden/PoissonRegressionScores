@@ -18,22 +18,8 @@ Scores = [ Table.Var1, Table.Var2 ];
 IDs = [ Table.Visitor, Table.Home ];
 Overtime = Table.Var3 == "OT";
 
-[ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = EstimatePoissionRegressionOnScores( Scores, IDs, Overtime, false( size( Overtime ) ) );
+[ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = EstimatePoissionRegressionOnScores( Scores, IDs, Overtime, false( size( Overtime ) ), 4 );
 
 Teams = regexprep( Teams, '[A-Z]+\>', '' );
 
-NTeams = numel( Teams );
-
-Combined = Offense + Defense;
-
-[ ~, ~, OffenseRank ] = unique( Offense );
-[ ~, ~, DefenseRank ] = unique( Defense );
-[ ~, ~, CombinedRank ] = unique( Combined );
-
-OffenseRank = NTeams + 1 - OffenseRank;
-DefenseRank = NTeams + 1 - DefenseRank;
-CombinedRank = NTeams + 1 - CombinedRank;
-
-Results = table( OffenseRank, DefenseRank, CombinedRank, 'RowNames', Teams );
-
-Results = sortrows( Results, 'CombinedRank' );
+Results = PostProcessResults( Offense, Defense, Teams );

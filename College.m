@@ -22,20 +22,6 @@ IDs = [ Table.AwayTeam, Table.HomeTeam ];
 Overtime = false( size( Scores, 1 ), 1 );
 NeutralSite = Table.NeutralSite == "true";
 
-[ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = EstimatePoissionRegressionOnScores( Scores, IDs, Overtime, NeutralSite );
+[ Mean, HomeOffset, OvertimeOffset, Offense, Defense, Teams ] = EstimatePoissionRegressionOnScores( Scores, IDs, Overtime, NeutralSite, 1 );
 
-NTeams = numel( Teams );
-
-Combined = Offense + Defense;
-
-[ ~, ~, OffenseRank ] = unique( Offense );
-[ ~, ~, DefenseRank ] = unique( Defense );
-[ ~, ~, CombinedRank ] = unique( Combined );
-
-OffenseRank = NTeams + 1 - OffenseRank;
-DefenseRank = NTeams + 1 - DefenseRank;
-CombinedRank = NTeams + 1 - CombinedRank;
-
-Results = table( OffenseRank, DefenseRank, CombinedRank, 'RowNames', Teams );
-
-Results = sortrows( Results, 'CombinedRank' );
+Results = PostProcessResults( Offense, Defense, Teams );
